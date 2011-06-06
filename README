@@ -1,0 +1,4 @@
+Stand alone SQL Client 
+-----------------------
+	Its an application by which we can query database the result will be displayed in a table. 
+			In oder to start the applicaton open the Query.html in the browser. Select a Database profile, write the query in the text area and press the execute button the result will be displayed in a table below.
