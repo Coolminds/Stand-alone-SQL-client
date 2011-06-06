@@ -1,0 +1,566 @@
+<html>
+	<head>
+			<link type="text/css" href="css/demo_table.css" rel="stylesheet"/>
+			<link type="text/css" href="css/jquery-ui.css" rel="stylesheet"/>
+			<link type="text/css" href="css/style.css" rel="stylesheet"/>
+			
+			<link rel="stylesheet" type="text/css" href="css/jqpopup.css"/>
+
+			<script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+			<script type="text/javascript" src="js/jquery.dataTables.js"></script>
+			<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+
+			<script type="text/javascript" src="js/jquery.bgiframe.min.js"></script>
+			<script type="text/javascript" src="js/jqDnR.min.js"></script>
+			<script type="text/javascript" src="js/jquery.jqpopup.min.js"></script>
+			<style type="text/css">
+				#tabs li .ui-icon-close {
+					float: left;
+					margin: 0.4em 0.2em 0 0;
+					cursor: pointer;
+					background: url(icons/closeButton.png);
+				}
+			</style>
+			<script type="text/javascript">
+			var tabCount=0;
+			var savedSQL=false;
+			var sqlName;
+			$(function(){
+				
+				showSavedSQL();
+				
+				var $tabs = $("#tabs").tabs();				
+				
+				populateMainCombobox();				
+
+				$( "#tabs span.ui-icon-close" ).live( "click", function() {
+					var index = $( "li", $tabs ).index( $( this ).parent() );
+					$tabs.tabs( "remove", index );
+				});
+
+				
+				/*$("#execute-1").click(function(event){
+					obj.executeFunction();
+				});*/
+
+				/*$("#execute-1").click(function(event){
+				//$("#execute-1").attr("disabled","disabled");
+					var query = $("#textArea-"+tabCount).val();
+					query = $.trim(query);
+					if(query.length == 0){
+						alert("Please enter the query");
+						return;
+					} else {
+						$("#resultDiv-1").empty();
+						//toApplet(query,"resultDiv-1");
+						var comboboxValue = $("#combobox-1").val();
+						setTimeout(function() { getResult_ToApplet(query,"resultDiv-1",comboboxValue); }, 1000);
+						//getResult_ToApplet(query,"resultDiv-1",comboboxValue);
+					}
+				});*/
+
+				/*$("#textArea-1").keyup(function(event){
+				  	if(event.keycode == 18 || event.keyCode == 13){
+				   		$("#execute-1").click();
+				  	}
+				});*/
+				
+				/*$("#testDatabase-1").click(function(event){
+						obj.testConnectionFunction();
+						if($("#combobox-1").val() == "empty"){
+							alert("Please select a DataBase");
+							return;
+						}
+						var connectionURL,userName,password;
+						$.each(data.connection,function(index,_data){
+							if($("#combobox-1").val() == _data.connectionName) {
+								//alert(combobox.val());
+								databaseType = _data.databaseType;
+								connectionURL = _data.connectionURL;
+								userName = _data.userName;
+								password = _data.password;
+							}
+						});
+						var status = document.myApplet.testConnection(databaseType,connectionURL,userName,password);
+						alert("Test Connection to Database: " + status);
+				});*/
+				
+				/*$("#save-1").click(function(event){
+					obj.saveFunction();
+				});*/
+
+				$("#addDatabase").click(function(event){
+					$("#addDatabaseDiv").jqpopup_open(this.id);
+					$("#addDatabaseDiv").jqpopup_toCenter();
+				});
+
+				$("#add").click(function(event){
+					$("#addDatabaseDiv").jqpopup_close();
+					//alert("'"+$("#connectionURL").val().trim()+"'&&"+"'"+$("#userName").val().trim()+"'&&"+"'"+$("#password").val().trim()+"'");
+					var connectionName = $("#connectionName").val().trim();
+					var databaseType = $("#databaseType").val().trim();
+					var connectionURL = $("#connectionURL").val().trim();
+					var userName = $("#userName").val().trim();
+					var password = $("#password").val().trim();
+					if((connectionURL == null || connectionURL =="")&&(databaseType == null || databaseType == "empty")&&(userName == null || userName =="")&&(password == null || password =="")){
+						return
+					}
+					data.connection.push({'connectionName':connectionName,'databaseType':databaseType,'connectionURL':connectionURL,'userName':userName,'password':password});
+					document.myApplet.replaceDataOfDocument(JSON.stringify(data));
+				});
+
+				$("#newSql").click(function(event){
+					tabCount++;
+					var obj = new tabManager();
+					obj.tabCounter = tabCount;
+					obj.newTab();
+					obj.testDatabase.click(function(event){
+						obj.testConnectionFunction();
+					});
+					obj.textArea.keyup(function(event){
+					  	if(event.keycode == 18 || event.keyCode == 13){
+					   		obj.executeButton.click();
+					  	}
+					});
+					obj.executeButton.click(function(event){
+						obj.resultDiv.empty();
+						obj.resultDiv.append("<img id='loading' src='icons/ajax-loader.gif'>Loading.....</img>");
+						setTimeout(function() {obj.executeFunction(); }, 1000);
+					});
+					obj.saveImg.click(function(event){
+						obj.saveFunction();
+					});
+					/*var tabLabel = "tabDiv-" + tabCount;
+					$tabs.tabs("add","#" + tabLabel,"Tab-"+tabCount);
+					var closeBtn = $("<span class='ui-icon ui-icon-close'></span>");
+					$("#tabs ul li:last").append(closeBtn);
+					var tabDiv = $("#tabDiv-"+ tabCount);
+					var connectionTab = $("<div class='connection'></div>");
+					var testDatabase = $("<img id='testDatabase-"+tabCount+"' src='icons/testDatabase.gif' style='cursor:pointer;float:right' title='Test Database'></img>");
+					var combobox = $("<select id='combobox-"+tabCount+"' style='float:right'></select>");
+					combobox.append("<option value='empty'>---------</option>");
+					$.each(data.connection,function(index,_data){
+						combobox.append("<option value='"+_data.connectionName+"' >"+_data.connectionName+"</option>");
+					});
+					var executeObj = new tabFunction();
+					executeObj.tabCounter = tabCount;
+					testDatabase.click(function(event){
+						executeObj.testConnectionFunction();
+					});
+					var inputArea = $("<div id='inputArea-" + tabCount + "'></div>");
+					var textArea = $("<textarea id='textArea-" + tabCount + "' cols='80'></textarea>");
+					var buttonsDiv = $("<div id='buttons-" + tabCount + "'></div>")
+					var saveImg = $("<img id='save-"+tabCount+"' src='icons/save.png' style='cursor:pointer' title='Save'></img>");
+					var executeButton = $("<button id='execute-" + tabCount + "' type='button' style='cursor:pointer'>Execute</button>");
+					textArea.keyup(function(event){
+					  	if(event.keycode == 18 || event.keyCode == 13){
+					   		executeButton.click();
+					  	}
+					});
+					executeButton.click(function(event){
+						$("#resultDiv-"+executeObj.tabCounter).empty();
+						setTimeout(function() {executeObj.executeFunction(); }, 1000);
+					});
+					saveImg.click(function(event){
+						executeObj.saveFunction();
+					});
+					var space = "&nbsp;";
+					
+					connectionTab.append(testDatabase);
+					connectionTab.append(combobox);
+					tabDiv.append(connectionTab);
+
+					inputArea.append(textArea);	
+					tabDiv.append(inputArea);
+
+					buttonsDiv.append(saveImg);
+					buttonsDiv.append(space);
+					buttonsDiv.append(executeButton);
+					tabDiv.append(buttonsDiv);
+					var resultDiv = $("<div id='resultDiv-"+tabCount+"' ></div>");
+					tabDiv.append(resultDiv);*/
+				});
+				
+				$("#newSql").click();
+
+			});
+	
+			function tabManager() {
+				this.tabCounter;
+				this.tab = $("#tabs").tabs();
+				this.testDatabase;
+				this.combobox;
+				this.textArea;
+				this.executeButton;
+				this.saveImg;
+				this.resultDiv;
+				this.closeBtn;
+				this.newTab = function() {
+					if(savedSQL) {
+						savedSQL = false;
+						sqlName;
+						this.tab.tabs("add","#tabDiv-" + this.tabCounter,sqlName);
+					} else {
+						this.tab.tabs("add","#tabDiv-" + this.tabCounter,"Tab-"+this.tabCounter);
+					}
+					var tabLabel = "tabDiv-" + this.tabCounter;
+					//$tabs.tabs("add","#" + tabLabel,"Tab-"+this.tabCounter);
+					//this.tab.tabs("add","#" + tabLabel,"Tab-"+this.tabCounter);
+					var closeBtn = $("<span class='ui-icon ui-icon-close'></span>");
+					this.closeBtn = this.closeBtn;
+					$("#tabs ul li:last").append(closeBtn);
+					//$("#tabs ul li:last").append(this.closeBtn);
+					var tabDiv = $("#tabDiv-"+ this.tabCounter);
+					var connectionTab = $("<div class='connection'></div>");
+					var testDatabase = $("<img id='testDatabase-"+ this.tabCounter + "' src='icons/testDatabase.gif' style='cursor:pointer;float:right' title='Test Database'></img>");
+					this.testDatabase = testDatabase;
+					var combobox = $("<select id='combobox-"+this.tabCounter+"' style='float:right'></select>");
+					combobox.append("<option value='empty'>---------</option>");
+					$.each(data.connection,function(index,_data){
+						combobox.append("<option value='"+_data.connectionName+"' >"+_data.connectionName+"</option>");
+					});
+					this.combobox = combobox;
+					//var executeObj = new tabFunction();
+					//executeObj.tabCounter = tabCount;
+					/*testDatabase.click(function(event){
+						alert("testDatabase-1");
+						this.testConnectionFunction;
+					});*/
+					var inputArea = $("<div id='inputArea-" + this.tabCounter + "'></div>");
+					var textArea = $("<textarea id='textArea-" + this.tabCounter + "' cols='80'></textarea>");
+					var buttonsDiv = $("<div id='buttons-" + this.tabCounter + "'></div>")
+					var saveImg = $("<img id='save-"+this.tabCounter+"' src='icons/save.png' style='cursor:pointer' title='Save'></img>");
+					var executeButton = $("<button id='execute-" + this.tabCounter + "' type='button' style='cursor:pointer'>Execute</button>");
+					/*textArea.keyup(function(event){
+					  	if(event.keycode == 18 || event.keyCode == 13){
+					   		executeButton.click();
+					  	}
+					});*/
+					this.textArea = textArea;
+					/*executeButton.click(function(event){
+						$("#resultDiv-"+this.tabCounter).empty();
+						setTimeout(function() {this.executeFunction(); }, 1000);
+					});*/
+					this.executeButton = executeButton;
+					/*saveImg.click(function(event){
+						saveFunction();
+					});*/
+					this.saveImg = saveImg;
+					var space = "&nbsp;";
+					
+					connectionTab.append(testDatabase);
+					connectionTab.append(combobox);
+					tabDiv.append(connectionTab);
+
+					inputArea.append(textArea);	
+					tabDiv.append(inputArea);
+
+					buttonsDiv.append(saveImg);
+					buttonsDiv.append(space);
+					buttonsDiv.append(executeButton);
+					tabDiv.append(buttonsDiv);
+					var resultDiv = $("<div id='resultDiv-"+this.tabCounter+ " ' ></div>");
+					this.resultDiv = resultDiv;
+					tabDiv.append(resultDiv);
+				}
+				this.executeFunction = function() {
+					//var query = $("#textArea-"+this.tabCounter).val();
+					var query = this.textArea.val();
+					query = $.trim(query);
+					if(query.length == 0){
+						alert("Please enter the query");
+						return;
+					} else {
+						//$("#resultDiv-"+this.tabCounter).empty();
+						//var comboboxValue = $("#combobox-"+this.tabCounter).val();
+						var comboboxValue = this.combobox.val();
+						var connectionURL,userName,password,databaseType;
+						if(comboboxValue == "empty"){
+							this.resultDiv.empty();
+							alert("Please select a DataBase");
+							return;
+						}
+						$.each(data.connection,function(index,_data){
+							if(comboboxValue == _data.connectionName) {
+								databaseType = _data.databaseType;
+								connectionURL = _data.connectionURL;
+								userName = _data.userName;
+								password = _data.password;
+							}
+						});
+						var result = document.myApplet.getResult(query,databaseType,connectionURL,userName,password);
+
+						//$("#resultDiv-"+this.tabCounter).empty();
+
+						//showResult(result,"#resultDiv-"+this.tabCounter);	
+
+						var jsonContent = eval("(" + result + ")");
+						var table = $("<table></table>")
+						table.attr('id','example'+this.tabCounter);
+						table.attr('class','display');
+						table.attr('cellpadding','0');
+						table.attr('cellspacing','0');
+						table.attr('border','0');
+						var trHead = $("<thead></thead>");
+						var tr = $("<tr></tr>");
+						$.each(jsonContent.columns,function(index,head){
+							var th = $("<th></th>");
+							th.append(head.name);
+							tr.append(th);
+						});
+						trHead.append(tr);
+						table.append(trHead);
+				
+						var trBody = $("<tbody></tbody>");
+						$.each(jsonContent.rows,function(index,content){
+							var trRow = $("<tr></tr>");
+							if(index%2 == 0) {
+								trRow.attr('class','even gradeA');
+							} else {
+								trRow.attr('class','odd gradeA');
+							}
+							$.each(content,function(innerIndex,innerContent){
+								var td = $("<td></td>");
+								td.append(innerContent);
+								trRow.append(td);
+							});
+							trBody.append(trRow);
+						});
+						table.append(trBody);
+						var br = $("</br> </br> </br>");
+						//$("#resultDiv-"+this.tabCounter).append(br);
+						//$("#resultDiv-"+this.tabCounter).append(table);
+						//$('#example'+this.tabCounter).dataTable();
+						this.resultDiv.empty();
+						this.resultDiv.append(br);
+						this.resultDiv.append(table);
+						table.dataTable();
+						
+						}
+				}
+				this.saveFunction = function() {
+					var promptName=prompt("Please enter a name for the sql");
+					_promptName = $.trim(promptName);
+					var comboboxValue = this.textArea.val().trim();
+					if (_promptName == null || _promptName =="") {	
+						alert("Please enter a name");
+						return;
+					} else if(comboboxValue == null || comboboxValue == ""){
+						alert("Please enter the query");
+						return;
+					}
+					var flag = true;
+					$.each(data.sql,function(index,_data){
+						if(_promptName == _data.name){
+							flag = false;
+							alert("Please enter different name");
+						}
+					});
+					if(flag) {
+						data.sql.push({'name':_promptName,'query':comboboxValue});
+						document.myApplet.replaceDataOfDocument(JSON.stringify(data));
+						showSavedSQL();
+					}	
+				
+				}
+				this.testConnectionFunction = function() {
+					//var combobox = $("#combobox-"+this.tabCounter).val();
+					var comboboxValue = this.combobox.val();
+					if(comboboxValue == "empty"){
+						alert("Please select a DataBase");
+						return;
+					}
+					var connectionURL,userName,password;
+					$.each(data.connection,function(index,_data){
+						if(comboboxValue == _data.connectionName) {
+							databaseType = _data.databaseType;
+							connectionURL = _data.connectionURL;
+							userName = _data.userName;
+							password = _data.password;
+						}
+					});
+					//alert(databaseType+"+++++"+connectionURL+"+++++"+userName+"+++++"+password);
+					var status = document.myApplet.testConnection(databaseType,connectionURL,userName,password);
+					alert("Test Connection to Database: " + status);
+				}
+			}
+			// Combobox on change
+			function dbType(){
+				var type = $("#databaseType").val()
+				if(type == "sql") {
+					$("#connectionURL").val("jdbc:jtds:sqlserver://<server>:<port>;DatabaseName=<database>");
+				} else if(type == "mysql"){
+					$("#connectionURL").val("jdbc:mysql://<server>:<port>/<database>?useOldAliasMetadataBehavior=true");
+				} else {
+					alert("Please select a Database Type");
+					return;
+				}
+			}
+			//Populate combobox of only the 1st Tab
+			function populateMainCombobox() {
+				$.each(data.connection,function(index,_data){
+						$("#combobox-1").append("<option value='"+_data.connectionName+"'>"+_data.connectionName+"</option>");
+					});
+			}
+			
+			//Show all saved sqls
+			function showSavedSQL(){
+				var closeCount;
+				$("#savedSQLDiv").empty();
+				$.each(data.sql,function(index,_data){
+					var savedNameDiv = $("<div id='" + _data.name +"Div' > </div>");
+					var savedName = $("<a></a>");
+					var closeButton = $("<img id='" + _data.name + "-close' src='icons/closeButton.png' style='cursor:pointer;float:right' title='Close'></img>");
+					savedName.attr('name',_data.name);
+					savedName.attr('style','cursor:pointer');
+					savedName.append(_data.name);
+					savedName.click(function(){
+						$("#savedSQLDiv").find("a").each(function(){
+							if(savedName.attr("name") == $(this).attr("name")) {
+								$("#" + savedName.attr("name") + "Div").attr('style','background-color:#C0C0C0');
+							} else {
+								$("#" + $(this).attr("name") + "Div").attr('style','background-color:#f5f5f5');
+							}
+						});
+						//$("#textArea-1").val(_data.query);
+						savedSQL = true;
+						sqlName = savedName.attr("name");
+						$("#newSql").click();
+						$("#textArea-"+tabCount).val(_data.query);
+					});
+					closeButton.click(function(){
+						$.each(data.sql,function(i,__data){
+							if(_data.name == __data.name)
+							closeCount = i;
+						});
+						data.sql.splice(closeCount,1); 
+						document.myApplet.replaceDataOfDocument(JSON.stringify(data));
+						showSavedSQL();
+						//alert("close");
+					});
+					savedNameDiv.append(savedName);
+					savedNameDiv.append(closeButton);
+					$("#savedSQLDiv").append(savedNameDiv);
+					$("#savedSQLDiv").append("</br>");
+				});
+			}
+			
+			</script>
+		<head>
+	<body>
+
+	<div id="addDatabaseDiv" style="display:none" title="Enter the DB details">
+		<table>
+			<tr><td>Connection Name: </td><td><input type="text" name="connectionName" id="connectionName"/></td></tr>
+			<tr><td>Database Type: </td><td><select id="databaseType" onchange="javascript:dbType();">
+								<option value="empty">---------</option>
+						 		<option value="sql">sql</option>
+								<option value="mysql">mysql</option>
+							</select></td></tr>
+			<tr><td>Connection URL: </td><td><input type="text" name="connectionURL" id="connectionURL"/></td></tr>
+			<tr><td>User Name: </td><td><input type="text" name="userName" id="userName"/></td></tr>
+			<tr><td>Password: </td><td><input type="text" name="password" id="password"/></td></tr>
+		</table>
+		<button id="add" type="button" style="cursor:pointer">Add</button>
+   	</div>
+
+<div style="width:100%;height: 100%" >
+	<div class="header">
+		<div class="appName">
+			<div style="float:right">
+				<h1><small>By. Sarin Wilfred. </small>Stand Alone <span>SQL Client.</span></h1>
+			</div>
+		</div>
+		<div class="clr"></div>
+		<div class="header_line"></div>
+		<div class="clr"></div>
+	</div>
+
+	<div class="body" style="width:100%;height:75%">
+		<!--<div style="width:100%">-->
+		<div style="width:10%;float:left">
+			<!--<button id="newSql" type="button">New SQL</button>-->
+			<!--<img id="newSql"src="icons/newButton.gif" style="cursor:pointer;float:right" title="New SQL" />-->
+			</br>
+			</br>
+			</br>
+			<div id="savedSQLDiv" style="float:right"></div>
+		</div>
+		<div style="float:right">
+			<img id="addDatabase"src="icons/addDatabase.png" style="cursor:pointer" title="Add new Database" />
+		</div>
+		<div id="view" style="width:90%;float:right; overflow:auto">
+			<div id="tabs" style="width:90%;float:right; overflow:auto">
+				<ul>
+					<!--<li><a href="#tabDiv-1"><span>Tab-1</span></a></li>-->
+					
+				</ul>
+				<!--<div id="tabDiv-1">
+					<div class="connection">
+						<img id="testDatabase-1"src="icons/testDatabase.gif" style="cursor:pointer;float:right" title="Test Connection to Database" />
+						<select id="combobox-1" style="float:right">
+						 	<option value="empty">---------</option>
+						</select>
+						</br>
+						</br>
+					</div>
+					<div id="inputArea-1">
+						<textarea id="textArea-1" cols="80"></textarea>
+					</div>
+					<div id="buttons-1">
+						<img id="save-1"src="icons/save.png" style="cursor:pointer" title='Save' />
+						<button id="execute-1" type="button" style="cursor:pointer">Execute</button>
+					</div>
+					<div id="resultDiv-1" ></div>
+				</div>-->
+			</div>
+			<img id="newSql"src="icons/newButton.gif" style="cursor:pointer;float:right" title="New SQL" />
+		</div>
+		<!--</div>-->
+			<div id="applet" style="float:bottom"> <APPLET ALIGN="CENTER" CODE="AppletProgramming.class" ARCHIVE ="AppletProject.jar,mysql-connector-java-5.0.8-bin.jar,jtds-1.2.5.jar,commons-beanutils-core-1.8.0.jar,commons-collections-3.1.jar,commons-lang-2.4.jar,commons-logging-1.1.1.jar,ezmorph-1.0.jar,json.jar,json-lib-2.1.jar"  NAME="myApplet" WIDTH="1" HEIGHT="1" MAYSCRIPT>
+			</APPLET></div>
+
+		<!--<div class="clr"></div>-->
+	</div>
+
+	<div class="footer">
+		<div class="header_line"></div>
+		FOOTER
+		<div class="clr"></div>
+	</div>
+</div>
+			<!--<div style="width:100%">
+				<div style="width:10%;float:left">
+					<button id="newSql" type="button">New SQL</button>
+					</br>
+					</br>
+					</br>
+					<div id="savedSQLDiv"></div>
+				</div>
+				<div id="view" style="width:90%;float:right">
+					<div id="tabs" style="width:90%;float:right">
+						<ul>
+							<li><a href="#tabDiv-1"><span>Tab 1</span></a></li>
+							
+						</ul>
+						<div id="tabDiv-1">
+							<div id="inputArea-1">
+								<textarea id="textArea-1" cols="80"></textarea>
+							</div>
+							<div id="buttons-1">
+								<img id="save-1"src="icons/save.png" style="cursor:pointer" title='Save' />
+								<button id="execute-1" type="button" style="cursor:pointer">Execute</button>
+							</div>
+							<div id="resultDiv-1" ></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id="applet" style="float:bottom"> <APPLET ALIGN="CENTER" CODE="AppletProgramming.class" ARCHIVE ="AppletProject.jar,mysql-connector-java-5.0.8-bin.jar,commons-beanutils-core-1.8.0.jar,commons-collections-3.1.jar,commons-lang-2.4.jar,commons-logging-1.1.1.jar,ezmorph-1.0.jar,json.jar,json-lib-2.1.jar"  NAME="myApplet" WIDTH="1" HEIGHT="1" MAYSCRIPT>
+			</APPLET></div>-->
+	</body>
+	<script type="text/javascript">
+var data = {"sql":[{"name":"select 1","query":"select 1"}],"connection":[]}
+	//var jsonContent = jQuery.parseJSON(stringData);
+	</script>
+</html>
